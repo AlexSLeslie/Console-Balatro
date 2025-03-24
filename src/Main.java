@@ -1,5 +1,9 @@
 import java.util.*;
 
+/** TODO:
+ *      - blind() bugtesting
+ *      - what to do after won/lost round
+ */
 public class Main {
     static int handSize = 8;
     static int numHands = 4;
@@ -12,9 +16,11 @@ public class Main {
     static ArrayList<Card> played; // the hand the player is playing from their hand (not to be confused with hand objects)
     static ArrayList<Card> discard;
 
-    static HashMap<Hand.Type, Hand> hands;
+    static HashMap<Hand.Type, Hand> handMap;
 
-    static Scanner s;
+    static Scanner scanner;
+
+    static CardSort cardSort;
 
     public static void main(String[] args) {
         // init and generate starting deck
@@ -27,9 +33,11 @@ public class Main {
         played = new ArrayList<>();
         discard = new ArrayList<>();
 
+        cardSort = new CardSort();
+
         initHands();
 
-        s = new Scanner(System.in);
+        scanner = new Scanner(System.in);
 
         while(gameLoop){
             blind(300);
@@ -64,54 +72,118 @@ public class Main {
     // returns if true player won blind
     public static boolean blind(int ante){
         Collections.shuffle(deck);
-        for(int i=0; i<handSize; ++i) hand.add(deck.remove(deck.size()-1));
 
-        boolean blindLoop = true;
-        int hands = numHands, discards = numDiscards, chips = 0;
-        String input = "";
+
+        boolean blindLoop = true, discarding = false;
+        int hands = numHands, discards = numDiscards, chips = 0, handChips = 0;
+        double mult;
+
+        Hand scoredHand;
 
         System.out.printf("Ante: %d\n", ante);
         while(blindLoop){
+            System.out.printf("Chips: %d\n", chips);
+//            for(int i=0; i<handSize; ++i) hand.add(deck.remove(deck.size()-1));
+            while(hand.size() < handSize) hand.add(deck.remove(deck.size()-1));
+            hand.sort(cardSort);
             for(int i=0; i<handSize; ++i) System.out.printf("%d%s ", i, hand.get(i));
 
-            // Get list of inputted numbers, sort, then move from hand to play
-            System.out.printf("\nEnter card numbers separated by spaces");
-            int[] ins = new int[5];
-            for(int i=0; i<5; ++i){
-                if(s.hasNextInt()){
-                    ins[i] = s.nextInt();
-                    if(ins[i] < 0 || ins[i] >= handSize) System.out.printf("Error reading hand\n");
+            // Determine if player is playing or discarding cards
+            boolean validInput = false;
+            while(!validInput){
+                System.out.printf("\nHands: %d | Discards: %d\nEnter <p> to play, or <d> to discard: ", hands, discards);
+                switch(scanner.nextLine().charAt(0)){
+                    case 'p':
+                    case 'P':
+                        discarding = false;
+                        validInput = true;
+                        break;
+                    case 'd':
+                    case 'D':
+                        if(discards > 0) {
+                            discarding = true;
+                            validInput = true;
+                        }
+                        else System.out.println("No discards remaining");
+                        break;
+                    default:
+                        System.out.println("Invalid input\n");
+
                 }
             }
 
-            Arrays.sort(ins);
-            for(int i=ins.length-1; i>=0; --i) played.add(hand.remove(i));
-
-            // TODO: score played hand
 
 
+            // Get list of inputted numbers, sort, then move from hand to play
+            System.out.print("\nEnter card numbers separated by spaces: ");
+            int x;
+            for(String s: scanner.nextLine().split(" ")){
+                try{
+                    if(played.size() >= 5) break;
+                    x = Integer.parseInt(s);
+                    if(x < 0 || handSize <= x || hand.get(Integer.parseInt(s)) == null) {
+                        validInput = false;
+                        break;
+                    }
+                    played.add(hand.get(x));
+                    hand.set(x, null);
+                } catch(Exception e){
+                    validInput = false;
+                    break;
+                }
+            }
+            if(!validInput){
+                System.out.println("Error: Invalid input");
+                continue;
+            }
 
-            blindLoop = false;
+            hand.removeAll(Collections.singleton(null));
+
+            // Move cards to played list even if discarded, in case checks on discarded cards necessary
+            if(discarding){
+                --discards;
+
+            }
+            else{
+                --hands;
+                chips = handMap.get(handType(played)).chips;
+                mult = handMap.get(handType(played)).mult;
+
+                for(Card c: played){
+                    handChips += c.chips;
+                    if(c.multX) mult *= c.mult;
+                    else mult += c.mult;
+
+                    System.out.printf("%s -> %d/%.2f | ", c, chips, mult);
+                }
+                chips = (int)(handChips * mult);
+                System.out.println();
+            }
+            discard.addAll(played);
+            played.clear();
+
+            if (hands <= 0) blindLoop = false;
+
+
         }
         return false;
     }
 
-    public static HashMap<Hand.Type, Hand> initHands(){
-        hands = new HashMap<>();
-        hands.put(Hand.Type.HIGH_CARD, new Hand(5, 1));
-        hands.put(Hand.Type.PAIR, new Hand(10, 2));
-        hands.put(Hand.Type.TWO_PAIR, new Hand(20, 2));
-        hands.put(Hand.Type.THREE_OF_A_KIND, new Hand(30, 3));
-        hands.put(Hand.Type.STRAIGHT, new Hand(30, 4));
-        hands.put(Hand.Type.FLUSH, new Hand(35, 4));
-        hands.put(Hand.Type.FULL_HOUSE, new Hand(40, 4));
-        hands.put(Hand.Type.FOUR_OF_A_KIND, new Hand(60, 7));
-        hands.put(Hand.Type.STRAIGHT_FLUSH, new Hand(100, 8));
-        hands.put(Hand.Type.ROYAL_FLUSH, new Hand(100, 8));
-        hands.put(Hand.Type.FIVE_OF_A_KIND, new Hand(120, 12));
-        hands.put(Hand.Type.FLUSH_HOUSE, new Hand(140, 14));
-        hands.put(Hand.Type.FLUSH_FIVE, new Hand(160, 16));
-        return hands;
+    public static void initHands(){
+        handMap = new HashMap<>();
+        handMap.put(Hand.Type.HIGH_CARD, new Hand(5, 1));
+        handMap.put(Hand.Type.PAIR, new Hand(10, 2));
+        handMap.put(Hand.Type.TWO_PAIR, new Hand(20, 2));
+        handMap.put(Hand.Type.THREE_OF_A_KIND, new Hand(30, 3));
+        handMap.put(Hand.Type.STRAIGHT, new Hand(30, 4));
+        handMap.put(Hand.Type.FLUSH, new Hand(35, 4));
+        handMap.put(Hand.Type.FULL_HOUSE, new Hand(40, 4));
+        handMap.put(Hand.Type.FOUR_OF_A_KIND, new Hand(60, 7));
+        handMap.put(Hand.Type.STRAIGHT_FLUSH, new Hand(100, 8));
+        handMap.put(Hand.Type.ROYAL_FLUSH, new Hand(100, 8));
+        handMap.put(Hand.Type.FIVE_OF_A_KIND, new Hand(120, 12));
+        handMap.put(Hand.Type.FLUSH_HOUSE, new Hand(140, 14));
+        handMap.put(Hand.Type.FLUSH_FIVE, new Hand(160, 16));
     }
 
 }

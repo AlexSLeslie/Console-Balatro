@@ -9,14 +9,18 @@ public class Card {
     public Suit suit;
     public int rank;
     public int chips;
+    public double mult;
+    public boolean multX; // indicates if mult is added or multiplied
 
     public Card(int rank, Suit suit){
         this.rank = rank;
         this.suit = suit;
+        this.mult = 0;
+        this.multX = false;
 
         if(rank == 1) chips = 11;
-        else if(rank > 10) chips = 10;
-        else chips = rank;
+        else chips = Math.min(rank, 10);
+
     }
 
     @Override

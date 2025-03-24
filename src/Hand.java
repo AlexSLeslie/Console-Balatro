@@ -17,16 +17,16 @@ public class Hand {
         FLUSH_FIVE
     }
     public int chips;
-    public int mult;
+    public double mult;
 
-    public Hand(int chips, int mult){
+    public Hand(int chips, double mult){
         this.chips = chips;
         this.mult = mult;
     }
 
 
     public static boolean hasRank(ArrayList<Card> cards, int rank){
-        return cards.stream().filter(c -> c.rank == 1).findAny().isPresent();
+        return cards.stream().anyMatch(c -> c.rank == 1);
     }
 
     public static boolean hasRank(ArrayList<Card> cards, int[] ranks){
@@ -44,7 +44,7 @@ public class Hand {
     }
 
     public static boolean straight(ArrayList<Card> cards){
-        Collections.sort(cards, new CardSort());
+        cards.sort(Main.cardSort);
         if(Hand.hasRank(cards, new int[]{1, 10, 11, 12, 13})) return true;
         for(int i=1; i<cards.size(); ++i){
             if(cards.get(i).rank - cards.get(i-1).rank != 1) return false;
@@ -53,7 +53,7 @@ public class Hand {
     }
 
     public static boolean ofAKind(ArrayList<Card> cards, int n){
-        int[] count = new int[13];
+        int[] count = new int[14];
         for(Card c: cards) {
             if(++count[c.rank] >= n) return true;
         }
@@ -62,7 +62,7 @@ public class Hand {
     }
     
     public static boolean fullHouse(ArrayList<Card> cards){
-        int[] count = new int[13];
+        int[] count = new int[14];
         for(Card c:cards) ++count[c.rank];
         
         boolean three = false, two = false;
@@ -75,7 +75,7 @@ public class Hand {
     }
 
     public static boolean twoPair(ArrayList<Card> cards){
-        int[] count = new int[13];
+        int[] count = new int[14];
         for(Card c: cards) ++count[c.rank];
 
         boolean found = false;
