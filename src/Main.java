@@ -1,26 +1,36 @@
 import java.util.*;
 
 /** TODO:
- *      - blind() bugtesting
+ *      - bug testing
+ *          - blind()
+ *          - card enhancements
  *      - what to do after won/lost round
+ *          - money
+ *          - shop
+ *      - Cards not in scoring hand should not be scored
+ *      - Jokers
+ *      - Tarots
+ *      - Planets
+ *      - Cards are sorted/scored lo-hi, should be opposite
  */
 public class Main {
     static int handSize = 8;
     static int numHands = 4;
     static int numDiscards = 3;
+    static int money = 0;
 
     static boolean gameLoop = true;
 
     static ArrayList<Card> deck;
-    static ArrayList<Card> hand;
-    static ArrayList<Card> played; // the hand the player is playing from their hand (not to be confused with hand objects)
-    static ArrayList<Card> discard;
+
 
     static HashMap<Hand.Type, Hand> handMap;
 
     static Scanner scanner;
 
     static CardSort cardSort;
+
+    static Random random;
 
     public static void main(String[] args) {
         // init and generate starting deck
@@ -29,23 +39,21 @@ public class Main {
             for(Card.Suit j: Card.Suit.values()) deck.add(new Card(i, j));
         }
 
-        hand = new ArrayList<>();
-        played = new ArrayList<>();
-        discard = new ArrayList<>();
-
         cardSort = new CardSort();
 
         initHands();
 
         scanner = new Scanner(System.in);
 
+        random = new Random();
+
         while(gameLoop){
-            blind(300);
+            blind(100);
+            blind(150);
             gameLoop = false;
         }
 
     }
-
 
     public static Hand.Type handType(ArrayList<Card> played){
         // check for all hand types
@@ -75,15 +83,20 @@ public class Main {
 
 
         boolean blindLoop = true, discarding = false;
-        int hands = numHands, discards = numDiscards, chips = 0, handChips = 0;
+        int hands = numHands, discards = numDiscards, chips = 0;
         double mult;
 
-        Hand scoredHand;
+        Hand.Type scoredHandType;
+
+        ArrayList<Card> hand = new ArrayList<>();
+        ArrayList<Card> played = new ArrayList<>(); // the hand the player is playing from their hand (not to be confused with hand objects)
+        ArrayList<Card> discard = new ArrayList<>();
+        ArrayList<Card> scored = new ArrayList<>();
 
         System.out.printf("Ante: %d\n", ante);
         while(blindLoop){
             System.out.printf("Chips: %d\n", chips);
-//            for(int i=0; i<handSize; ++i) hand.add(deck.remove(deck.size()-1));
+
             while(hand.size() < handSize) hand.add(deck.remove(deck.size()-1));
             hand.sort(cardSort);
             for(int i=0; i<handSize; ++i) System.out.printf("%d%s ", i, hand.get(i));
@@ -146,25 +159,68 @@ public class Main {
             }
             else{
                 --hands;
-                chips = handMap.get(handType(played)).chips;
-                mult = handMap.get(handType(played)).mult;
+                scoredHandType = handType(played);
 
+                // Ensure cards not necessary for score are not counted
+                scored.addAll(played);
                 for(Card c: played){
-                    handChips += c.chips;
-                    if(c.multX) mult *= c.mult;
-                    else mult += c.mult;
+                    scored.remove(c);
+                    if(scoredHandType != handType(scored)) scored.add(c);
+                }
+
+                if(scored.size() == 0) scored.add(played.get(played.size()-1));
+
+                System.out.printf("Hand: %s | Base Chips: %d | Base Mult: %.0f\n",
+                        scoredHandType, handMap.get(scoredHandType).chips, handMap.get(scoredHandType).mult);
+                chips = handMap.get(scoredHandType).chips;
+                mult = handMap.get(scoredHandType).mult;
+
+                for(Card c: scored){
+                    chips += c.getChips();
+                    mult = switch(c.getEnhance()){
+                        case MULT -> mult + 4;
+                        case GLASS -> mult * 2;
+                        case LUCKY -> mult + (oneIn(5)? 20 : 0);
+                        default -> mult;
+                    };
+
+                    if(c.getEnhance() == Card.Enhance.LUCKY && oneIn(15)) money += 20;
 
                     System.out.printf("%s -> %d/%.2f | ", c, chips, mult);
                 }
-                chips = (int)(handChips * mult);
+
+                for(Card c: hand){
+                    if(c.getEnhance() == Card.Enhance.STEEL) mult *= 1.5;
+                    // Other effects will use cards left in hand
+                }
+
+                chips = (int)(chips * mult);
                 System.out.println();
             }
-            discard.addAll(played);
+
+            System.out.println();
+
+            for(Card c: played){
+                if(c.getEnhance() == Card.Enhance.GLASS && oneIn(4)) destroy(c);
+                else discard.add(c);
+            }
+
             played.clear();
+            scored.clear();
 
-            if (hands <= 0) blindLoop = false;
+
+            if (hands <= 0 || chips >= ante) blindLoop = false;
 
 
+        }
+        System.out.printf("Chips: %d\n", chips);
+        if(chips >= ante){
+
+            for(Card c: hand){
+                if(c.getEnhance() == Card.Enhance.GOLD) money += 3;
+            }
+            deck.addAll(discard);
+            return true;
         }
         return false;
     }
@@ -184,6 +240,14 @@ public class Main {
         handMap.put(Hand.Type.FIVE_OF_A_KIND, new Hand(120, 12));
         handMap.put(Hand.Type.FLUSH_HOUSE, new Hand(140, 14));
         handMap.put(Hand.Type.FLUSH_FIVE, new Hand(160, 16));
+    }
+
+    // Wrapper for Random.nextInt()
+    public static boolean oneIn(int value){ return random.nextInt(value) == 0; }
+
+    // Not necessary now, may be for later compatibility
+    public static void destroy(GameObject gameObject){
+        System.out.printf("%s was destroyed!", gameObject);
     }
 
 }

@@ -26,7 +26,7 @@ public class Hand {
 
 
     public static boolean hasRank(ArrayList<Card> cards, int rank){
-        return cards.stream().anyMatch(c -> c.rank == 1);
+        return cards.stream().anyMatch(c -> c.getRank() == rank);
     }
 
     public static boolean hasRank(ArrayList<Card> cards, int[] ranks){
@@ -36,9 +36,10 @@ public class Hand {
         return true;
     }
 
+    // Gut feeling this method will cause problems later
     public static boolean flush(ArrayList<Card> cards){
         for(Card card: cards){
-            if(card.suit != cards.get(0).suit) return false;
+            if(card.getSuit() != cards.get(0).getSuit() || card.getEnhance() != Card.Enhance.WILD) return false;
         }
         return true;
     }
@@ -47,7 +48,7 @@ public class Hand {
         cards.sort(Main.cardSort);
         if(Hand.hasRank(cards, new int[]{1, 10, 11, 12, 13})) return true;
         for(int i=1; i<cards.size(); ++i){
-            if(cards.get(i).rank - cards.get(i-1).rank != 1) return false;
+            if(cards.get(i).getRank() - cards.get(i-1).getRank() != 1) return false;
         }
         return true;
     }
@@ -55,16 +56,16 @@ public class Hand {
     public static boolean ofAKind(ArrayList<Card> cards, int n){
         int[] count = new int[14];
         for(Card c: cards) {
-            if(++count[c.rank] >= n) return true;
+            if(++count[c.getRank()] >= n) return true;
         }
 
         return false;
     }
-    
+
     public static boolean fullHouse(ArrayList<Card> cards){
         int[] count = new int[14];
-        for(Card c:cards) ++count[c.rank];
-        
+        for(Card c:cards) ++count[c.getRank()];
+
         boolean three = false, two = false;
         for(int i: count){
             if(i>=3 && !three) three = true;
@@ -76,7 +77,7 @@ public class Hand {
 
     public static boolean twoPair(ArrayList<Card> cards){
         int[] count = new int[14];
-        for(Card c: cards) ++count[c.rank];
+        for(Card c: cards) ++count[c.getRank()];
 
         boolean found = false;
         for(int i: count){
