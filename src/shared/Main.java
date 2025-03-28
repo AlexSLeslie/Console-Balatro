@@ -1,3 +1,5 @@
+package shared;
+
 import java.util.*;
 
 /** TODO:
@@ -7,7 +9,6 @@ import java.util.*;
  *      - what to do after won/lost round
  *          - money
  *          - shop
- *      - Cards not in scoring hand should not be scored
  *      - Jokers
  *      - Tarots
  *      - Planets
@@ -170,7 +171,7 @@ public class Main {
 
                 if(scored.size() == 0) scored.add(played.get(played.size()-1));
 
-                System.out.printf("Hand: %s | Base Chips: %d | Base Mult: %.0f\n",
+                System.out.printf("shared.Hand: %s | Base Chips: %d | Base Mult: %.0f\n",
                         scoredHandType, handMap.get(scoredHandType).chips, handMap.get(scoredHandType).mult);
                 chips = handMap.get(scoredHandType).chips;
                 mult = handMap.get(scoredHandType).mult;

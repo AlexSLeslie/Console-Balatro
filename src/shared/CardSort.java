@@ -1,3 +1,5 @@
+package shared;
+
 import java.util.Comparator;
 
 public class CardSort implements Comparator<Card> {

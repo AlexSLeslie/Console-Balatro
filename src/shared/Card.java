@@ -1,3 +1,5 @@
+package shared;
+
 public class Card extends GameObject{
 
     public enum Suit{
