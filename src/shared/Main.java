@@ -19,10 +19,18 @@ public class Main {
     static int numHands = 4;
     static int numDiscards = 3;
     static int money = 0;
+    static int chips;
+
+    static double mult;
 
     static boolean gameLoop = true;
 
     static ArrayList<Card> deck;
+
+    static ArrayList<Card> hand;
+    static ArrayList<Card> played; // the hand the player is playing from their hand (not to be confused with hand objects)
+    static ArrayList<Card> discard;
+    static ArrayList<Card> scored;
 
 
     static HashMap<Hand.Type, Hand> handMap;
@@ -84,15 +92,15 @@ public class Main {
 
 
         boolean blindLoop = true, discarding = false;
-        int hands = numHands, discards = numDiscards, chips = 0;
-        double mult;
+        int hands = numHands, discards = numDiscards;//, chips = 0;
+        //double mult;
 
         Hand.Type scoredHandType;
 
-        ArrayList<Card> hand = new ArrayList<>();
-        ArrayList<Card> played = new ArrayList<>(); // the hand the player is playing from their hand (not to be confused with hand objects)
-        ArrayList<Card> discard = new ArrayList<>();
-        ArrayList<Card> scored = new ArrayList<>();
+        hand = new ArrayList<>();
+        played = new ArrayList<>(); // the hand the player is playing from their hand (not to be confused with hand objects)
+        discard = new ArrayList<>();
+        scored = new ArrayList<>();
 
         System.out.printf("Ante: %d\n", ante);
         while(blindLoop){
@@ -250,5 +258,20 @@ public class Main {
     public static void destroy(GameObject gameObject){
         System.out.printf("%s was destroyed!", gameObject);
     }
+
+    public static int getChips(){ return chips; }
+    public static void setChips(int chips){ Main.chips = chips; }
+
+    public static double getMult(){ return mult; }
+    public static void setMult(double mult){ Main.mult = mult; }
+    public static void addMult(double mult){ Main.mult += mult; }
+    public static void timesMult(double Mult){ Main.mult *= mult; }
+
+    public static int getMoney(){ return money; }
+    public static void setMoney(int money){ Main.money = money; }
+
+    public static ArrayList<Card> getHand(){ return hand; }
+
+    public static ArrayList<Card> getScored(){ return scored; }
 
 }

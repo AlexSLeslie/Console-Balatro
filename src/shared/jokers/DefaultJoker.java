@@ -1,16 +1,18 @@
 package shared.jokers;
 
 import shared.jokers.interfaces.Independent;
-import shared.*;
+import shared.Main;
 
 public class DefaultJoker extends Joker implements Independent {
 
     public DefaultJoker(){
         name = "Joker";
+        id = 1;
+        description = "+4 Mult";
     }
 
     @Override
     public void independent() {
-        // continue from here
+        Main.addMult(4);
     }
 }

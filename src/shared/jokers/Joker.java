@@ -33,9 +33,12 @@ public abstract class Joker extends GameObject {
     protected Rarity rarity;
 
     protected String name;
+    protected String description;
 
     protected int chips = 0;
+    protected int id;
     protected double mult = 0;
+
 
     public Joker(){}
 
@@ -60,6 +63,10 @@ public abstract class Joker extends GameObject {
     public void setChips(int chips){ this.chips = chips; }
 
     public double getMult(){ return mult; }
+
+    public int getID(){ return id; }
+
+    public String getDescription(){ return description; }
 
 
 }
