@@ -1,9 +1,11 @@
 package shared;
 
 import org.reflections.Reflections;
-import shared.jokers.*;
+import shared.gameObjects.GameObject;
+import shared.gameObjects.Card;
+//import shared.gameObjects.jokers.Joker;
+import shared.gameObjects.jokers.*;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /** TODO:
@@ -12,7 +14,11 @@ import java.util.*;
  *          - card enhancements
  *      - what to do after won/lost round
  *          - money
- *          - shop
+ *      - shop()
+ *          - vouchers
+ *          - packs
+ *      - duplicateJoker()
+ *      - better method for random with >2 outcomes
  *      - Jokers
  *      - Tarots
  *      - Planets
@@ -23,7 +29,7 @@ public class Main {
     static int handSize = 8;
     static int numHands = 4;
     static int numDiscards = 3;
-    static int money = 0;
+    static int money = 15;
     static int chips;
     static int shopItems = 2;
     static int consumables = 2;
@@ -32,7 +38,7 @@ public class Main {
 
     static boolean gameLoop = true;
 
-    static ArrayList<shared.Card> deck;
+    static ArrayList<Card> deck;
 
     static ArrayList<Card> hand;
     static ArrayList<Card> played; // the hand the player is playing from their hand (not to be confused with hand objects)
@@ -54,6 +60,9 @@ public class Main {
     static Reflections reflections;
 
     public static void main(String[] args) {
+
+        random = new Random();
+
         // init and generate starting deck
         deck = new ArrayList<>();
         for(int i=1; i<=13; ++i){
@@ -63,18 +72,19 @@ public class Main {
         cardSort = new CardSort();
         initHands();
 
-        reflections = new Reflections("shared.jokers");
+        reflections = new Reflections("shared.gameObjects.jokers");
 
         jokers = new ArrayList<>();
         initAllJokers();
 
         scanner = new Scanner(System.in);
-        random = new Random();
+
 
 
         while(gameLoop){
-            blind(100);
-            blind(150);
+            shop();
+//            blind(100);
+//            blind(150);
             gameLoop = false;
         }
 
@@ -251,25 +261,46 @@ public class Main {
     }
 
     public static void shop(){
-        ArrayList<GameObject> shopList = fillShop();
-        boolean shopLoop = true;
+        ArrayList<GameObject> shopCards = fillShopCards();
+        // will have ArrayLists of vouchers and packs later
 
-        while(shopLoop){
-            System.out.printf("=-=-= SHOP =-=-=\n%d\nCards: ", money);
-            for(GameObject gameObject: shopList)
-                System.out.printf("$%d %s | ", gameObject.price, gameObject);
+        final int BUY_STATE = 0;
+        final int SELL_STATE = 1;
+        final int LEAVE_STATE = 2;
+        final int INSPECT_STATE = 3;
+        int state = BUY_STATE;
 
-            // Add packs, vouchers later
-            boolean validInput = false;
-            while(!validInput){
-//                System.out.printf("Enter ")
-                // TODO: Continue here
+        int reroll = 5;
+
+
+        while(state != LEAVE_STATE){
+            if(state == BUY_STATE) {
+                displayShop(shopCards);
+
+                // Add packs, vouchers later
+                boolean validInput = false;
+                while (!validInput) {
+                    System.out.printf("Enter a number to purchase a card");
+                }
+            }
+            else if(state == SELL_STATE){
+
             }
 
         }
     }
 
-    public static ArrayList<GameObject> fillShop(){
+    public static void displayShop(ArrayList<GameObject> shopCards){
+        System.out.printf("=-=-= SHOP =-=-=\n$%d\nCards: ", money);
+
+        int i = 0;
+        for (GameObject gameObject : shopCards) {
+            System.out.printf("%d - $%d %s | ", i++, gameObject.getPrice(), gameObject);
+        }
+//        System.out.printf("Reroll: $%d", reroll);
+    }
+
+    public static ArrayList<GameObject> fillShopCards(){
         ArrayList<GameObject> shopList = new ArrayList<>();
         for(int i=0; i<shopItems; ++i){
             int shopItemType = random.nextInt(28);
@@ -289,9 +320,18 @@ public class Main {
     }
 
     public static Joker randomJoker(Joker.Rarity rarity){
-
         // gets the list of joker subclasses specified by rarity, then inits a new joker from a random selection
-        return newJoker(jokersByRarity.get(rarity).get(random.nextInt(jokersByRarity.get(rarity).size())));
+        // possible issue in late stages of game where unable to find joker in rarity unowned by player
+
+        // uncommon/rare jokers not yet implemented
+        if(jokersByRarity.get(Joker.Rarity.RARE).size() == 0) rarity = Joker.Rarity.COMMON;
+        try {
+            return newJoker(jokersByRarity.get(rarity).get(random.nextInt(jokersByRarity.get(rarity).size())));
+        } catch(Exception e){
+            e.printStackTrace();
+            System.out.println(rarity + " " + jokersByRarity.get(rarity).size());
+            return null;
+        }
     }
 
     public static void initHands(){
@@ -312,6 +352,7 @@ public class Main {
     }
 
     public static void initAllJokers(){
+        jokersByRarity = new HashMap<>();
         for(Joker.Rarity rarity: Joker.Rarity.values()) jokersByRarity.put(rarity, new ArrayList<>());
 
         allJokers = reflections.getSubTypesOf(Joker.class);
@@ -321,6 +362,15 @@ public class Main {
             }catch (Exception e) { System.out.println(e); }
         }
 
+    }
+
+    public static void printJokersByRarity(){
+        for(Map.Entry<Joker.Rarity, ArrayList<Class<? extends Joker>>> entry: jokersByRarity.entrySet()){
+            for(Class<? extends Joker> j: entry.getValue()){
+                Joker joker = newJoker(j);
+                System.out.printf("%s (%s), ", joker.getName(), (joker).getRarity().name());
+            }
+        }
     }
 
     public static Joker newJoker(Class<? extends Joker> c){

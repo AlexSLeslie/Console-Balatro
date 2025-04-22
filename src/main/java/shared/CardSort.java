@@ -1,5 +1,7 @@
 package shared;
 
+import shared.gameObjects.Card;
+
 import java.util.Comparator;
 
 public class CardSort implements Comparator<Card> {
