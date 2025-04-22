@@ -38,6 +38,8 @@ public class Main {
 
     static boolean gameLoop = true;
 
+    final static String INVALID_INPUT_MESSAGE = "Error: Invalid input";
+
     static ArrayList<Card> deck;
 
     static ArrayList<Card> hand;
@@ -140,14 +142,12 @@ public class Main {
             boolean validInput = false;
             while(!validInput){
                 System.out.printf("\nHands: %d | Discards: %d\nEnter <p> to play, or <d> to discard: ", hands, discards);
-                switch(scanner.nextLine().charAt(0)){
+                switch(firstCharInScanner()){
                     case 'p':
-                    case 'P':
                         discarding = false;
                         validInput = true;
                         break;
                     case 'd':
-                    case 'D':
                         if(discards > 0) {
                             discarding = true;
                             validInput = true;
@@ -155,12 +155,10 @@ public class Main {
                         else System.out.println("No discards remaining");
                         break;
                     default:
-                        System.out.println("Invalid input\n");
+                        System.out.println(INVALID_INPUT_MESSAGE+"\n");
 
                 }
             }
-
-
 
             // Get list of inputted numbers, sort, then move from hand to play
             System.out.print("\nEnter card numbers separated by spaces: ");
@@ -181,7 +179,7 @@ public class Main {
                 }
             }
             if(!validInput){
-                System.out.println("Error: Invalid input");
+                System.out.println(INVALID_INPUT_MESSAGE);
                 continue;
             }
 
@@ -261,54 +259,98 @@ public class Main {
     }
 
     public static void shop(){
-        ArrayList<GameObject> shopCards = fillShopCards();
+//        ArrayList<GameObject> shopCards = fillShopCards();
+        Shop shop = new Shop();
+        fillShop(shop);
         // will have ArrayLists of vouchers and packs later
 
-        final int BUY_STATE = 0;
-        final int SELL_STATE = 1;
-        final int LEAVE_STATE = 2;
-        final int INSPECT_STATE = 3;
-        int state = BUY_STATE;
-
         int reroll = 5;
+        boolean shopLoop = true;
 
+        while(shopLoop){
+            displayShop(shop);
 
-        while(state != LEAVE_STATE){
-            if(state == BUY_STATE) {
-                displayShop(shopCards);
+            // Add packs, vouchers later
+            boolean validInput = false;
+            char actionType = '\0';
+            while (!validInput) {
+                System.out.print("Enter <p> to purchase, <i> to inspect, or <s> to sell a card. Enter <q> to leave shop: ");
 
-                // Add packs, vouchers later
-                boolean validInput = false;
-                while (!validInput) {
-                    System.out.printf("Enter a number to purchase a card");
-                }
+                actionType = firstCharInScanner();
+                validInput = charIn(actionType, "pisq");
+                if(!validInput)
+                    System.out.println(INVALID_INPUT_MESSAGE);
             }
-            else if(state == SELL_STATE){
+
+            if(actionType == 'q') return;
+
+            validInput = false;
+            int cardNumber = -1;
+            while(!validInput){
+                System.out.print("Enter a number corresponding to a card: ");
+                if(!scanner.hasNextInt()) {
+                    System.out.print(INVALID_INPUT_MESSAGE);
+                    break;
+                }
+                cardNumber = scanner.nextInt();
+                validInput = inRange(cardNumber, shop.totalObjects() + jokers.size());
 
             }
 
         }
     }
 
-    public static void displayShop(ArrayList<GameObject> shopCards){
+    // min <= value < max
+    public static boolean inRange(int value, int min, int max){
+        return min <= value && value < max;
+    }
+
+    // 0 <= value < max
+    public static boolean inRange(int value, int max){
+        return inRange(value, 0, max);
+    }
+
+    public static char firstCharInScanner(){
+        return scanner.nextLine().toLowerCase().charAt(0);
+    }
+
+    public static boolean charIn(char c, String s){
+        return s.indexOf(c) >= 0;
+    }
+
+    public static void displayShop(Shop shop){
         System.out.printf("=-=-= SHOP =-=-=\n$%d\nCards: ", money);
 
         int i = 0;
-        for (GameObject gameObject : shopCards) {
-            System.out.printf("%d - $%d %s | ", i++, gameObject.getPrice(), gameObject);
+        for (GameObject gameObject : shop.getCards())
+            printShopItem(i++, gameObject);
+
+        System.out.printf("Reroll: $%n\n\n", shop.getRerollPrice());
+        if(jokers.size() > 0) {
+            System.out.print("Your Jokers: ");
+            for (Joker joker : jokers)
+                printShopItem(i++, joker);
+
+            System.out.printf("\n\n");
         }
-//        System.out.printf("Reroll: $%d", reroll);
+
     }
 
-    public static ArrayList<GameObject> fillShopCards(){
-        ArrayList<GameObject> shopList = new ArrayList<>();
+    public static void printShopItem(int index, GameObject gameObject){
+        System.out.printf("%d - $%d %s | ", index, gameObject.getPrice(), gameObject);
+    }
+
+    public static void fillShop(Shop shop){
+        fillShopCards(shop);
+    }
+
+    public static void fillShopCards(Shop shop){
         for(int i=0; i<shopItems; ++i){
             int shopItemType = random.nextInt(28);
-            if(shopItemType < 4) shopList.add(randomJoker()); // change to tarot when added
-            else if(shopItemType < 8) shopList.add(randomJoker());
-            else shopList.add(randomJoker());
+            if(shopItemType < 4) shop.addCard(randomJoker()); // change to tarot when added
+            else if(shopItemType < 8) shop.addCard(randomJoker());
+            else shop.addCard(randomJoker());
         }
-        return shopList;
     }
 
     public static Joker randomJoker(){
