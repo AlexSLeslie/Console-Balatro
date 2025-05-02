@@ -27,12 +27,13 @@ import java.util.*;
 public class Main {
 
     static int handSize = 8;
+    static int maxJokers = 5;
     static int numHands = 4;
     static int numDiscards = 3;
     static int money = 15;
     static int chips;
     static int shopItems = 2;
-    static int consumables = 2;
+    static int maxConsumables = 2;
 
     static double mult;
 
@@ -48,6 +49,7 @@ public class Main {
     static ArrayList<Card> scored;
 
     static ArrayList<Joker> jokers;
+    static ArrayList<GameObject> consumables;
     static Set<Class<? extends Joker>> allJokers;
     static HashMap<Joker.Rarity, ArrayList<Class<? extends Joker>>> jokersByRarity;
 
@@ -76,6 +78,7 @@ public class Main {
 
         reflections = new Reflections("shared.gameObjects.jokers");
 
+        consumables = new ArrayList<>();
         jokers = new ArrayList<>();
         initAllJokers();
 
@@ -259,12 +262,10 @@ public class Main {
     }
 
     public static void shop(){
-//        ArrayList<GameObject> shopCards = fillShopCards();
         Shop shop = new Shop();
         fillShop(shop);
         // will have ArrayLists of vouchers and packs later
 
-        int reroll = 5;
         boolean shopLoop = true;
 
         while(shopLoop){
@@ -274,30 +275,113 @@ public class Main {
             boolean validInput = false;
             char actionType = '\0';
             while (!validInput) {
-                System.out.print("Enter <p> to purchase, <i> to inspect, or <s> to sell a card. Enter <q> to leave shop: ");
+                System.out.print("Enter selection: Purchase <p> | Inspect <i> | Sell <s> | Reroll <r> | Quit shop <q>: ");
 
                 actionType = firstCharInScanner();
-                validInput = charIn(actionType, "pisq");
-                if(!validInput)
-                    System.out.println(INVALID_INPUT_MESSAGE);
+                validInput = charIn(actionType, "pisrq");
+                printErrorIfInvalid(validInput);
             }
 
             if(actionType == 'q') return;
+            if(actionType == 'r'){
+                if(money >= shop.getRerollPrice()){
+                    fillShop(shop);
+                    money -= shop.getRerollPrice();
+                    shop.rerollIncrease();
+                }
+                else System.out.println("Insufficient funds for reroll");
+                continue;
+            }
+            if(actionType == 'p' && jokers.size() + consumables.size() == maxJokers + maxConsumables){
+                System.out.println("No room for new purchases!");
+                continue;
+            }
+
+            if(actionType == 's' && jokers.size() + consumables.size() == 0){
+                System.out.println("Nothing to sell!");
+                continue;
+            }
 
             validInput = false;
-            int cardNumber = -1;
+            int shopIndex = -1;
+
             while(!validInput){
                 System.out.print("Enter a number corresponding to a card: ");
                 if(!scanner.hasNextInt()) {
-                    System.out.print(INVALID_INPUT_MESSAGE);
-                    break;
+                    System.out.println(INVALID_INPUT_MESSAGE);
+                    continue;
                 }
-                cardNumber = scanner.nextInt();
-                validInput = inRange(cardNumber, shop.totalObjects() + jokers.size());
+
+                shopIndex = scanner.nextInt();
+                validInput = validateShopInput(shop, shopIndex, actionType);
+
+                // TODO: unique error message when trying to buy own card or sell shop card
+                printErrorIfInvalid(validInput);
 
             }
 
+            if(shopIndex == -1) throw new IndexOutOfBoundsException("My loop didn't work ;-;");
+
+            switch(actionType){
+                case 'p':
+                    purchaseShopItem(shop, shopIndex);
+                    break;
+                case 's':
+                    //sellShopItem(shop, shopIndex);
+                    break;
+            }
+
+            System.out.println();
         }
+    }
+
+    public static void printErrorIfInvalid(boolean input){
+        if(!input)
+            System.out.println(INVALID_INPUT_MESSAGE);
+    }
+
+    public static void sellShopItem(Shop shop, int shopIndex){
+        return;
+    }
+
+    public static void purchaseShopItem(Shop shop, int shopIndex){
+        GameObject gameObject = getGameObjectFromShopIndex(shop, shopIndex);
+
+        if(money < gameObject.getPrice()) {
+            System.out.println("Insufficient funds!");
+            return;
+        }
+
+        // TODO: continue here, also implement sellShopItem()
+
+    }
+
+    public static boolean validateShopInput(Shop shop, int input, char actionType){
+        return switch(actionType){
+            case 'p' -> inRange(input, shop.totalObjects());
+            case 's' -> input > totalShopOptions(shop);
+            default -> inRange(input, shop.totalObjects() + jokers.size());
+        };
+    }
+
+
+    public static GameObject getGameObjectFromShopIndex(Shop shop, int shopIndex){
+        if(!inRange(shopIndex, totalShopOptions(shop)))
+            throw new IndexOutOfBoundsException();
+
+
+        else if(shopIndex < shop.totalObjects())
+            return shop.getGameObject(shopIndex);
+
+        else if(shopIndex < shop.totalObjects() + jokers.size())
+            return jokers.get(shopIndex - shop.totalObjects());
+
+        else return null;
+    }
+
+    // Will eventually be shop items + vouchers + player owned jokers & consumables
+    public static int totalShopOptions(Shop shop){
+        return shop.totalObjects() + jokers.size();
     }
 
     // min <= value < max
@@ -325,13 +409,13 @@ public class Main {
         for (GameObject gameObject : shop.getCards())
             printShopItem(i++, gameObject);
 
-        System.out.printf("Reroll: $%n\n\n", shop.getRerollPrice());
+        System.out.printf("Reroll: $%d\n\n", shop.getRerollPrice());
         if(jokers.size() > 0) {
             System.out.print("Your Jokers: ");
             for (Joker joker : jokers)
                 printShopItem(i++, joker);
 
-            System.out.printf("\n\n");
+            System.out.print("\n\n");
         }
 
     }
@@ -341,6 +425,7 @@ public class Main {
     }
 
     public static void fillShop(Shop shop){
+        shop.clear();
         fillShopCards(shop);
     }
 
@@ -368,7 +453,8 @@ public class Main {
         // uncommon/rare jokers not yet implemented
         if(jokersByRarity.get(Joker.Rarity.RARE).size() == 0) rarity = Joker.Rarity.COMMON;
         try {
-            return newJoker(jokersByRarity.get(rarity).get(random.nextInt(jokersByRarity.get(rarity).size())));
+            ArrayList<Class<? extends Joker>> givenRarityJokers = jokersByRarity.get(rarity);
+            return newJoker(givenRarityJokers.get(random.nextInt(givenRarityJokers.size())));
         } catch(Exception e){
             e.printStackTrace();
             System.out.println(rarity + " " + jokersByRarity.get(rarity).size());

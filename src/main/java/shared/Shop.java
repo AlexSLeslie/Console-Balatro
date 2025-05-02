@@ -13,6 +13,7 @@ public class Shop {
     private int rerollPrice;
 
     public Shop(){
+        cards = new ArrayList<>();
         rerollPrice = 5;
     }
 
@@ -20,10 +21,17 @@ public class Shop {
 
     public ArrayList<GameObject> getCards(){ return cards; }
 
+    public void clear(){ cards.clear(); }
+
     public int totalObjects(){ return cards.size(); }
 
     public int getRerollPrice(){ return rerollPrice; }
     public void setRerollPrice(int price){ rerollPrice = price; }
+    public void rerollIncrease(){ ++rerollPrice; }
+
+    // current plan is to have consumables and vouchers be stored in different lists,
+    // but will be accessed externally as if part of the same list
+    public GameObject getGameObject(int index){ return cards.get(index); }
 
 
 
