@@ -51,8 +51,8 @@ public class Main {
     static ArrayList<Joker> jokers;
     static ArrayList<GameObject> consumables;
     static Set<Class<? extends Joker>> allJokers;
+    
     static HashMap<Joker.Rarity, ArrayList<Class<? extends Joker>>> jokersByRarity;
-
     static HashMap<Hand.Type, Hand> handMap;
 
     static Scanner scanner;
@@ -72,6 +72,9 @@ public class Main {
         for(int i=1; i<=13; ++i){
             for(Card.Suit j: Card.Suit.values()) deck.add(new Card(i, j));
         }
+        
+        initListForGameObject();
+        initMaxForGameObject();
 
         cardSort = new CardSort();
         initHands();
@@ -94,6 +97,7 @@ public class Main {
         }
 
     }
+    
 
     public static Hand.Type handType(ArrayList<Card> played){
         // check for all hand types
@@ -292,6 +296,7 @@ public class Main {
                 else System.out.println("Insufficient funds for reroll");
                 continue;
             }
+            // May not be necessary, leaving in for now
             if(actionType == 'p' && jokers.size() + consumables.size() == maxJokers + maxConsumables){
                 System.out.println("No room for new purchases!");
                 continue;
@@ -341,7 +346,9 @@ public class Main {
     }
 
     public static void sellShopItem(Shop shop, int shopIndex){
-        return;
+        GameObject gameObject = getGameObjectFromShopIndex(shop, shopIndex);
+
+        // TODO: Continue here
     }
 
     public static void purchaseShopItem(Shop shop, int shopIndex){
@@ -352,9 +359,47 @@ public class Main {
             return;
         }
 
-        // TODO: continue here, also implement sellShopItem()
+        if(!roomForPurchase(gameObject)){
+            System.out.println("No room for purchase!");
+            return;
+        }
+        
+
+        money -= gameObject.getPrice();
+
+        if(gameObject instanceof Joker) jokers.add((Joker) gameObject);
+        // TODO: add to here as more purchasables added
+
+        System.out.printf("%s purchased!\n", gameObject.getName());
+
 
     }
+
+    public static boolean roomForPurchase(GameObject gameObject){
+        try {
+            return getRelevantList(gameObject).size() < getMaxHeld(gameObject);
+        } catch (Exception e){
+            System.out.println(e);
+            return false;
+        }
+    }
+
+    public static List getRelevantList(GameObject gameObject){
+        if(gameObject instanceof Joker) return jokers;
+        else {
+            System.out.println("Error: Unexpected class " + gameObject.getClass().getName() + " in method getRelevantList()");
+            return null;
+        }
+    }
+
+    private static int getMaxHeld(GameObject gameObject){
+        if(gameObject instanceof Joker) return maxJokers;
+        else {
+            System.out.println("Error: Unexpected class " + gameObject.getClass().getName() + " in method getMaxHeld()");
+            return 0;
+        }
+    }
+
 
     public static boolean validateShopInput(Shop shop, int input, char actionType){
         return switch(actionType){
@@ -491,6 +536,7 @@ public class Main {
         }
 
     }
+
 
     public static void printJokersByRarity(){
         for(Map.Entry<Joker.Rarity, ArrayList<Class<? extends Joker>>> entry: jokersByRarity.entrySet()){
