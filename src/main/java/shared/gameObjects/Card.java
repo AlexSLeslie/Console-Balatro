@@ -1,5 +1,7 @@
 package shared.gameObjects;
 
+import java.util.Locale;
+
 public class Card extends GameObject {
 
     public enum Suit{
@@ -36,15 +38,22 @@ public class Card extends GameObject {
         this.price = 1;
         this.enhance = Enhance.NONE;
 
-        chips = rank == 1? 11: Math.min(rank, 10);
+        this.chips = rank == 1? 11: Math.min(rank, 10);
 
     }
 
-
-
     @Override
     public String toString() {
-        return String.format("[%c/%d]", this.suit.toString().charAt(0), this.rank);
+        return String.format("%s[%c/%d]", getEnhanceShort(), this.suit.toString().charAt(0), this.rank);
+    }
+
+    private String getEnhanceShort(){
+        return switch(enhance){
+          case STEEL -> "SL";
+          case STONE -> "SN";
+          case NONE -> "";
+          default -> "" + enhance.toString().charAt(0);
+        };
     }
 
     public Suit getSuit() { return enhance == Enhance.WILD? Suit.WILD : suit; }
@@ -65,8 +74,34 @@ public class Card extends GameObject {
     public int getRank() { return rank; }
     public void setRank(int rank) { this.rank = rank; }
 
-
     @Override
     public int getPrice() { return 0; }
+
+    @Override
+    public String getName(){ return ""; }
+
+    @Override
+    public String getDescription(){
+        String out = "";
+
+        if(enhance != Enhance.NONE)
+            out += capitalize(suit.name()) + " ";
+
+        out += switch(rank){
+            case 1 -> "Ace";
+            case 11 -> "Jack";
+            case 12 -> "Queen";
+            case 13 -> "King";
+            default -> "" + rank;
+        };
+
+        return out + " of " + capitalize(suit.name()) + "s";
+    }
+
+    private String capitalize(String s){
+        if(s.length() < 2) return s.toUpperCase();
+        return s.substring(0,1).toUpperCase() + s.substring(1).toLowerCase();
+    }
+
 }
 

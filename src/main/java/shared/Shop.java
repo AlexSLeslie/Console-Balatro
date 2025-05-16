@@ -18,6 +18,7 @@ public class Shop {
     }
 
     public void addCard(GameObject gameObject){ cards.add(gameObject); }
+    public void removeCard(GameObject gameObject){ cards.remove(gameObject); }
 
     public ArrayList<GameObject> getCards(){ return cards; }
 

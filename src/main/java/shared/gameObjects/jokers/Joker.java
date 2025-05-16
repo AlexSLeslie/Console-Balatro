@@ -32,7 +32,6 @@ public abstract class Joker extends GameObject {
     protected Edition edition;
     protected Rarity rarity;
 
-    protected String description;
 
     protected int id;
 
@@ -59,7 +58,6 @@ public abstract class Joker extends GameObject {
 
     public int getID(){ return id; }
 
-    public String getDescription(){ return description; }
 
     @Override
     public String toString(){
