@@ -23,6 +23,8 @@ import java.util.*;
  *      - Tarots
  *      - Planets
  *      - Cards are sorted/scored lo-hi, should be opposite
+ *
+ *      CONTINUE BY INTEGRATING PACKS TO SHOP
  */
 public class Main {
 
@@ -265,8 +267,7 @@ public class Main {
     }
 
     // TODO: CONTINUE HERE
-    // SEPARATE BUY PRICE FROM SELL PRICE
-    
+
     public static void shop(){
         Shop shop = new Shop();
         fillShop(shop);
@@ -360,7 +361,7 @@ public class Main {
 
     public static void sellGameObject(GameObject gameObject){
 
-        money += gameObject.getPrice();
+        money += gameObject.getSellPrice();
         getRelevantList(gameObject).remove(gameObject);
         System.out.printf("%s sold!\n", gameObject.getName());
     }

@@ -7,6 +7,8 @@ public abstract class GameObject {
     protected String description;
 
     public int getPrice(){ return price; }
+    public int getSellPrice(){ return Math.max(1, getPrice()/2); }
+
     public void setPrice(int price){ this.price = price; }
 
     public String getName(){ return name; }

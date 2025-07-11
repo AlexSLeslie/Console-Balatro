@@ -7,6 +7,7 @@ import java.util.*;
 public class Shop {
 
     private ArrayList<GameObject> cards;
+    private int packs[];
 //    ArrayList of vouchers here
 //    ArrayList of packs here
 

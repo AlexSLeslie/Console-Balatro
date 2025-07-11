@@ -50,6 +50,8 @@ public abstract class Joker extends GameObject {
         };
     }
 
+//    public int getSellPrice(){ return Math.max(1, getPrice()/2); }
+
     public Edition getEdition(){ return edition; }
     public void setEdition(Edition edition){ this.edition = edition; }
 
