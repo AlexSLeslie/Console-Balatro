@@ -1,10 +1,14 @@
 package shared;
 
+
+import org.apache.commons.rng.UniformRandomProvider;
+import org.apache.commons.rng.sampling.DiscreteProbabilityCollectionSampler;
+import org.apache.commons.rng.simple.RandomSource;
 import org.reflections.Reflections;
-import shared.gameObjects.GameObject;
 import shared.gameObjects.Card;
-//import shared.gameObjects.jokers.Joker;
-import shared.gameObjects.jokers.*;
+import shared.gameObjects.GameObject;
+import shared.gameObjects.Pack;
+import shared.gameObjects.jokers.Joker;
 
 import java.util.*;
 
@@ -52,6 +56,7 @@ public class Main {
 
     static ArrayList<Joker> jokers;
     static ArrayList<GameObject> consumables;
+    static DiscreteProbabilityCollectionSampler<Pack.Type> packTypeSampler;
     static Set<Class<? extends Joker>> allJokers;
     
     static HashMap<Joker.Rarity, ArrayList<Class<? extends Joker>>> jokersByRarity;
@@ -88,9 +93,13 @@ public class Main {
 
         scanner = new Scanner(System.in);
 
+        initPackTypeSampler();
+
+
 
 
         while(gameLoop){
+            test();
             shop();
 //            blind(100);
 //            blind(150);
@@ -98,7 +107,27 @@ public class Main {
         }
 
     }
-    
+
+
+    public static void test(){
+    }
+
+
+
+    public static void initPackTypeSampler(){
+        UniformRandomProvider urp = RandomSource.XO_RO_SHI_RO_128_PP.create();
+        packTypeSampler = new DiscreteProbabilityCollectionSampler<Pack.Type>(urp, Pack.getWeightMap());
+    }
+
+    public static Pack randomPack(){
+        Pack.Type packType = packTypeSampler.sample();
+
+        Pack.Size packSize;
+        if(oneIn(2)) packSize = Pack.Size.NORMAL;
+        else packSize = oneIn(4)? Pack.Size.MEGA : Pack.Size.JUMBO;
+        return new Pack(packType, packSize);
+    }
+
 
     public static Hand.Type handType(ArrayList<Card> played){
         // check for all hand types
@@ -265,8 +294,6 @@ public class Main {
         }
         return false;
     }
-
-    // TODO: CONTINUE HERE
 
     public static void shop(){
         Shop shop = new Shop();
@@ -489,6 +516,7 @@ public class Main {
     public static void fillShop(Shop shop){
         shop.clear();
         fillShopCards(shop);
+        fillShopPacks(shop);
     }
 
     public static void fillShopCards(Shop shop){
@@ -499,6 +527,13 @@ public class Main {
             else shop.addCard(randomJoker());
         }
     }
+
+    public static void fillShopPacks(Shop shop){
+        for(int i=0; i<2; ++i)
+            shop.addPack(randomPack());
+
+    }
+
 
     public static Joker randomJoker(){
         int r = random.nextInt(100);

@@ -7,19 +7,21 @@ import java.util.*;
 public class Shop {
 
     private ArrayList<GameObject> cards;
-    private int packs[];
-//    ArrayList of vouchers here
-//    ArrayList of packs here
+    private ArrayList<Pack> packs;
 
     private int rerollPrice;
 
     public Shop(){
         cards = new ArrayList<>();
+        packs = new ArrayList<>();
         rerollPrice = 5;
     }
 
     public void addCard(GameObject gameObject){ cards.add(gameObject); }
     public void removeCard(GameObject gameObject){ cards.remove(gameObject); }
+
+    public void addPack(Pack pack){ packs.add(pack); }
+    public void removePack(Pack pack){ packs.remove(pack); }
 
     public ArrayList<GameObject> getCards(){ return cards; }
 

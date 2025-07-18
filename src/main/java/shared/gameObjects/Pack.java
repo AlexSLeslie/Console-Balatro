@@ -1,6 +1,8 @@
 package shared.gameObjects;
 
-public class Pack{
+import java.util.HashMap;
+
+public class Pack extends GameObject{
     public enum Type{
         STANDARD,
         ARCANA,
@@ -14,40 +16,37 @@ public class Pack{
         MEGA
     }
 
+    private static final double[] weights = {4, 1.2, 0.6};
+
     private Type type;
     private Size size;
 
-    public double rate;
-    public int cost;
 
     public Pack(Type type, Size size){
         this.type = type;
         this.size = size;
 
-        initRate();
-        initCost();
+        initPrice();
+        initName();
+
     }
 
-    private void initRate(){
-        rate = switch(type){
-            case STANDARD, ARCANA, CELESTIAL -> 4;
-            case BUFFOON -> 1.2;
-            case SPECTRAL -> 0.6;
-        }
-        / switch(size){
-            case NORMAL -> 1;
-            case JUMBO -> 2;
-            case MEGA -> 8;
-        };
-    }
 
-    private void initCost(){
-        cost = switch(size){
+    private void initPrice(){
+        price = switch(size){
             case NORMAL -> 4;
             case JUMBO -> 6;
             case MEGA -> 8;
         };
     }
+
+    private void initName(){
+        name = size == Size.NORMAL? "" : capitalizeFirst(size.name()) + " ";
+        name += capitalizeFirst(type.name());
+        name += " Pack";
+    }
+
+
 
     public Type getType() {
         return type;
@@ -57,11 +56,24 @@ public class Pack{
         return size;
     }
 
-    public double getRate() {
-        return rate;
+
+    @Override
+    public int getSellPrice(){
+        System.out.println("Error: Attempting to sell a pack");
+        return -1;
     }
 
-    public int getCost() {
-        return cost;
+    // For use by DiscreteProbabilityCollectionSampler
+    public static HashMap<Type, Double> getWeightMap(){
+        return new HashMap<Type, Double>(){{
+            put(Type.STANDARD, weights[0]);
+            put(Type.ARCANA, weights[0]);
+            put(Type.CELESTIAL, weights[0]);
+            put(Type.BUFFOON, weights[1]);
+            put(Type.SPECTRAL, weights[2]);
+        }};
     }
+
+
+
 }

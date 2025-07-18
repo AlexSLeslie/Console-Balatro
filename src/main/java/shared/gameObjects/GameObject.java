@@ -14,4 +14,8 @@ public abstract class GameObject {
     public String getName(){ return name; }
 
     public String getDescription(){ return description; }
+
+    protected String capitalizeFirst(String s){
+        return s.substring(0,1).toUpperCase() + s.substring(1).toLowerCase();
+    }
 }
